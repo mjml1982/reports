@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Non-VIP Reminder Workflows – Side-by-Side Comparison</title>
+<style>
+  :root {
+    --new: #1e3a5f;
+    --live: #4a1e5f;
+    --new-light: #e8f0fb;
+    --live-light: #f3e8fb;
+    --new-mid: #3a6db5;
+    --live-mid: #8a3ab5;
+    --sms-bg: #fff8e1;
+    --sms-border: #f0c040;
+    --email-bg: #f0f7ff;
+    --email-border: #90bce8;
+    --tag-common: #1a7f4b;
+    --tag-new: #1e3a5f;
+    --tag-live: #4a1e5f;
+    --tag-common-bg: #d4f0e2;
+    --tag-new-bg: #dceaf8;
+    --tag-live-bg: #ead8f5;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f6fa; color: #222; }
+
+  .page-header {
+    background: linear-gradient(135deg, #1e3a5f 0%, #4a1e5f 100%);
+    color: #fff;
+    padding: 36px 40px 28px;
+  }
+  .page-header h1 { font-size: 1.7rem; font-weight: 700; margin-bottom: 8px; }
+  .page-header p { opacity: .8; font-size: .95rem; }
+
+  .url-bar {
+    display: flex; gap: 16px; flex-wrap: wrap;
+    padding: 18px 40px;
+    background: #fff;
+    border-bottom: 1px solid #e0e0e0;
+  }
+  .url-pill {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: .82rem;
+    text-decoration: none;
+    font-weight: 600;
+    color: #fff;
+    transition: opacity .15s;
+  }
+  .url-pill:hover { opacity: .85; }
+  .url-pill.new { background: var(--new-mid); }
+  .url-pill.live { background: var(--live-mid); }
+  .url-pill .label { opacity: .85; font-weight: 400; }
+
+  .main { max-width: 1400px; margin: 0 auto; padding: 30px 20px 60px; }
+
+  /* Column headers */
+  .col-headers {
+    display: grid;
+    grid-template-columns: 140px 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 8px;
+    padding: 0 0 0 0;
+  }
+  .col-headers .ch {
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: .9rem;
+    color: #fff;
+    text-align: center;
+  }
+  .col-headers .ch.new { background: var(--new); }
+  .col-headers .ch.live { background: var(--live); }
+  .col-headers .ch.blank { background: transparent; }
+
+  /* Timeline rows */
+  .timeline { display: flex; flex-direction: column; gap: 6px; }
+
+  .row {
+    display: grid;
+    grid-template-columns: 140px 1fr 1fr;
+    gap: 12px;
+    align-items: start;
+  }
+
+  .time-label {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 14px 8px;
+    background: #fff;
+    border-radius: 10px;
+    border: 1px solid #ddd;
+    text-align: center;
+    position: sticky;
+    top: 8px;
+  }
+  .time-label .when { font-size: .75rem; color: #666; margin-bottom: 4px; text-transform: uppercase; letter-spacing: .05em; }
+  .time-label .offset { font-size: 1rem; font-weight: 700; color: #333; line-height: 1.2; }
+  .time-label .pt { font-size: .72rem; color: #888; margin-top: 3px; }
+  .time-label .condition { font-size: .68rem; color: #c0392b; margin-top: 4px; font-style: italic; }
+
+  .cell {
+    padding: 14px 16px;
+    border-radius: 10px;
+    background: #fff;
+    border: 1px solid #ddd;
+  }
+  .cell.new-cell { border-left: 4px solid var(--new-mid); }
+  .cell.live-cell { border-left: 4px solid var(--live-mid); }
+  .cell.empty { background: #fafafa; border: 1px dashed #ddd; display: flex; align-items: center; justify-content: center; color: #bbb; font-size: .82rem; font-style: italic; }
+
+  .msg-block { margin-bottom: 12px; }
+  .msg-block:last-child { margin-bottom: 0; }
+
+  .msg-type {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+    padding: 3px 8px; border-radius: 4px; margin-bottom: 7px;
+  }
+  .msg-type.email { background: var(--email-bg); color: #1a5a9a; border: 1px solid var(--email-border); }
+  .msg-type.sms { background: var(--sms-bg); color: #7a5a00; border: 1px solid var(--sms-border); }
+
+  .subject-line {
+    font-size: .8rem;
+    background: #fffde7;
+    border-left: 3px solid #f0b429;
+    padding: 5px 9px;
+    margin-bottom: 6px;
+    border-radius: 0 5px 5px 0;
+    color: #5a4000;
+  }
+  .subject-line strong { font-size: .7rem; text-transform: uppercase; color: #888; display: block; margin-bottom: 2px; }
+
+  .body-preview {
+    font-size: .78rem;
+    color: #444;
+    line-height: 1.55;
+    background: #fafafa;
+    border: 1px solid #eee;
+    border-radius: 6px;
+    padding: 8px 10px;
+    max-height: 160px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+  }
+  .body-preview.sms-body {
+    background: var(--sms-bg);
+    border-color: var(--sms-border);
+  }
+
+  .merge-tags { margin-top: 7px; display: flex; flex-wrap: wrap; gap: 4px; }
+  .tag {
+    font-size: .68rem;
+    padding: 2px 7px;
+    border-radius: 12px;
+    font-family: 'Courier New', monospace;
+    font-weight: 600;
+  }
+  .tag.common { background: var(--tag-common-bg); color: var(--tag-common); border: 1px solid #a8dfc4; }
+  .tag.unique-new { background: var(--tag-new-bg); color: var(--new); border: 1px solid #b0c8e8; }
+  .tag.unique-live { background: var(--tag-live-bg); color: var(--live); border: 1px solid #c8a8e8; }
+  .tag.placeholder { background: #ffeedd; color: #b04000; border: 1px solid #f0b070; }
+
+  /* ---- MERGE TAG LEGEND ---- */
+  .section-title {
+    font-size: 1.2rem; font-weight: 700; margin: 36px 0 14px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #e0e0e0;
+  }
+
+  .merge-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+  .merge-card {
+    background: #fff;
+    border-radius: 10px;
+    padding: 18px;
+    border: 1px solid #ddd;
+  }
+  .merge-card h3 { font-size: .88rem; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+  .dot.common { background: var(--tag-common); }
+  .dot.new { background: var(--new-mid); }
+  .dot.live { background: var(--live-mid); }
+
+  .merge-card table { width: 100%; border-collapse: collapse; font-size: .8rem; }
+  .merge-card table th { text-align: left; padding: 5px 8px; background: #f5f6fa; color: #555; font-weight: 600; font-size: .72rem; text-transform: uppercase; }
+  .merge-card table td { padding: 5px 8px; border-bottom: 1px solid #f0f0f0; vertical-align: top; }
+  .merge-card table tr:last-child td { border-bottom: none; }
+  .merge-card table td:first-child { font-family: 'Courier New', monospace; }
+  .merge-card table td.appear { color: #555; font-size: .75rem; }
+
+  /* SMS/Email quick matrix */
+  .matrix-table { width: 100%; border-collapse: collapse; font-size: .8rem; background: #fff; border-radius: 10px; overflow: hidden; border: 1px solid #ddd; }
+  .matrix-table th { background: #f0f3f8; padding: 10px 12px; text-align: left; font-weight: 700; font-size: .78rem; }
+  .matrix-table td { padding: 9px 12px; border-bottom: 1px solid #f0f0f0; vertical-align: top; }
+  .matrix-table tr:last-child td { border-bottom: none; }
+  .matrix-table tr:hover td { background: #fafbff; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: .72rem; font-weight: 700; }
+  .badge.email { background: var(--email-bg); color: #1a5a9a; }
+  .badge.sms { background: var(--sms-bg); color: #7a5a00; }
+  .badge.both { background: #e8f5e9; color: #1a6b3a; }
+  .diff-highlight { background: #fff8e1; }
+
+  footer { text-align: center; color: #aaa; font-size: .78rem; padding: 20px; margin-top: 20px; }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>Non-VIP Event Reminder Workflows — Side-by-Side Comparison</h1>
+  <p>Pre &amp; Post Event Reminder (New Draft) vs. Live Non-VIP Event Reminder &nbsp;·&nbsp; Generated 2026-05-14</p>
+</div>
+
+<div class="url-bar">
+  <a class="url-pill new" href="https://app.clientsondemand.app/location/h83O4TKy09yLLdfnIw3K/workflow/f364e26a-993d-4b85-bc76-7ecdfc20aa54" target="_blank">
+    &#128196; <span class="label">New Draft:</span> Pre &amp; Post Event Reminder (Non-VIP)
+  </a>
+  <a class="url-pill live" href="https://app.clientsondemand.app/location/h83O4TKy09yLLdfnIw3K/workflow/d70ebf0c-1fc7-440a-a6f1-16c04e1d48f3" target="_blank">
+    &#128994; <span class="label">Live:</span> Non-VIP Event Reminder
+  </a>
+</div>
+
+<div class="main">
+
+  <!-- Column headers -->
+  <div class="col-headers">
+    <div class="ch blank"></div>
+    <div class="ch new">&#128196; New Draft Version</div>
+    <div class="ch live">&#128994; Live Version</div>
+  </div>
+
+  <div class="timeline">
+
+    <!-- ROW 1: 1 hour before -->
+    <div class="row">
+      <div class="time-label">
+        <span class="when">Before Event</span>
+        <span class="offset">–1 hr</span>
+        <span class="pt">Pre-event</span>
+      </div>
+
+      <!-- NEW: 1hr before -->
+      <div class="cell new-cell">
+        <div class="msg-block">
+          <span class="msg-type email">&#9993; Email</span>
+          <div class="subject-line"><strong>Subject</strong><em>(No subject line specified in draft)</em></div>
+          <div class="body-preview">Hi {{contact.first_name}},
+
+We start in 1 hour!
+
+🔗 Access Link: {{contact.joinurl}}
+📅 Date/Time: TODAY - {{ contact.booked_workshop_pretty_date }} Pacific
+
+Close everything else. This is the most important time you'll spend on your business this month.
+
+See you in 1 hour, Let's do this!
+– Russ</div>
+          <div class="merge-tags">
+            <span class="tag common">{{contact.first_name}}</span>
+            <span class="tag common">{{contact.joinurl}}</span>
+            <span class="tag common">{{ contact.booked_workshop_pretty_date }}</span>
+          </div>
+        </div>
+        <div class="msg-block">
+          <span class="msg-type sms">&#128172; SMS</span>
+          <div class="body-preview sms-body">Your Workshop with Russ Ruffino starts in 1 hour
+
+Access Link: {{contact.joinurl}}
+
+- Russ</div>
+          <div class="merge-tags">
+            <span class="tag common">{{contact.joinurl}}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- LIVE: 1hr before -->
+      <div class="cell live-cell">
+        <div class="msg-block">
+          <span class="msg-type email">&#9993; Email</span>
+          <div class="subject-line"><strong>Subject</strong>⏰ Workshop with Russ Ruffino in 1 Hour – Your Workshop Access</div>
+          <div class="body-preview">Hi {{contact.first_name}},
+
+We start in 1 hour!
+
+🔗 Access Link: {{contact.joinurl}}
+📅 Date/Time: TODAY - {{ contact.booked_workshop_pretty_date }} Pacific
+
+Close everything else—this is the most important time you'll spend on your business this month.
+
+See you in 1 hour, Let's do this!
+– Russ</div>
+          <div class="merge-tags">
+            <span class="tag common">{{contact.first_name}}</span>
+            <span class="tag common">{{contact.joinurl}}</span>
+            <span class="tag common">{{ contact.booked_workshop_pretty_date }}</span>
+          </div>
+        </div>
+        <div class="msg-block">
+          <span class="msg-type sms">&#128172; SMS</span>
+          <div class="body-preview sms-body">Your Workshop with Russ Ruffino starts in 1 hour
+
+Access Link: {{contact.joinurl}}
+
+- Russ</div>
+          <div class="merge-tags">
+            <span class="tag common">{{contact.joinurl}}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROW 2: 15 min before -->
+    <div class="row">
+      <div class="time-label">
+        <span class="when">Before Event</span>
+        <span class="offset">–15 min</span>
+        <span class="pt">Pre-event</span>
+      </div>
+
+      <!-- NEW: 15min -->
+      <div class="cell new-cell">
+        <div class="msg-block">
+          <span class="msg-type email">&#9993; Email</span>
+          <div class="subject-line"><strong>Subject</strong>⏰ Workshop starts in 15 minutes</div>
+          <div class="body-preview">Hey it's Russ Ruffino. Quick heads-up: we're starting at the top of the hour!
+
+Don't miss this, you need to be there if you want my AI prompts that will create your Entire High Ticket Coaching Program, Start to Finish.
+
+🔗 Access Link: {{contact.joinurl}}</div>
+          <div class="merge-tags">
+            <span class="tag common">{{contact.joinurl}}</span>
+          </div>
+        </div>
+        <div class="msg-block">
+          <span class="msg-type sms">&#128172; SMS</span>
+          <div class="body-preview sms-body">Hey it's Russ Ruffino — quick heads-up: we're starting at the top of the hour!
+Don't miss this, you need to be there if you want my AI prompts that will create your Entire High Ticket Coaching Program, Start to Finish.
+
+Access Link: {{contact.joinurl}}</div>
+          <div class="merge-tags">
+            <span class="tag common">{{contact.joinurl}}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- LIVE: 15min -->
+      <div class="cell live-cell">
+        <div class="msg-block">
+          <span class="msg-type email">&#9993; Email</span>
+          <div class="subject-line"><strong>Subject</strong>⏰ Workshop starts in 15 minutes</div>
+          <div class="body-preview">Hi {{contact.first_name}},
+
+We're creating your High-Ticket Offer - starting in 15 minutes.
+
+🔗 Access Link: {{contact.joinurl}}
+📅 Date/Time: TODAY - {{ contact.booked_workshop_pretty_date }} Pacific
+
+See you there,
+– Russ</div>
+          <div class="merge-tags">
+            <span class="tag common">{{contact.first_name}}</span>
+            <span class="tag common">{{contact.joinurl}}</span>
+            <span class="tag common">{{ contact.booked_workshop_pretty_date }}</span>
+          </div>
+        </div>
+        <div class="msg-block">
+          <span class="msg-type sms">&#128172; SMS</span>
+          <div class="body-preview sms-body">Hey it's Russ Ruffino — quick heads-up: we're starting at the top of the hour!
+Don't miss this, you need to be there if you want my AI prompts that will create your Entire High Ticket Coaching Program, Start to Finish.
+
+Access Link: {{contact.joinurl}}</div>
+          <div class="merge-tags">
+            <span class="tag common">{{contact.joinurl}}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROW 3: +4 hrs -->
+    <div class="row">
+      <div class="time-label">
+        <span class="when">After Event</span>
+        <span class="offset">+4 hrs</span>
+        <span class="pt">~8 PM PT</span>
+      </div>
+
+      <!-- NEW: +4hrs -->
+      <div class="cell new-cell">
+        <div class="msg-block">
+          <span class="msg-type email">&#9993; Email</span>
+          <div class="subject-line"><strong>Subject</strong>Your AI prompts are ready, {{contact.first_name}}.</div>
+          <div class="body-preview">Hey {{contact.first_name}},
+
+Great workshop today.
+
+As promised, here's your AI Prompt Library. Keep them. Use them again. Share them with nobody.
+
+AI Prompt Library: https://items-obey-2ps.craft.me/s2HtZ1VyYS24Am
+Password: russisawesome
+Course Creator Bot: [COURSE_CREATOR_BOT_LINK]
+
+Book your strategy call: www.clientsondemand.com/apply
+
+P.S. Still thinking about VIP? The Friday VIP Q&A with Russ is on {{custom_values.cod_auto_workshop_vip_date_pretty}} at {{custom_values.cod_auto_workshop_vip_time_pretty}}{{custom_values.cod_auto_workshop_timezone}}.</div>
+          <div class="merge-tags">
+            <span class="tag common">{{contact.first_name}}</span>
+            <span class="tag common">{{custom_values.cod_auto_workshop_vip_date_pretty}}</span>
+            <span class="tag common">{{custom_values.cod_auto_workshop_vip_time_pretty}}</span>
+            <span class="tag common">{{custom_values.cod_auto_workshop_timezone}}</span>
+            <span class="tag placeholder">[COURSE_CREATOR_BOT_LINK] ⚠️ placeholder</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- LIVE: +4hrs -->
+      <div class="cell live-cell">
+        <div class="msg-block">
+          <span class="msg-type email">&#9993; Email</span>
+          <div class="subject-line"><strong>Subject</strong>Your AI prompts + bot access (as promised)</div>
+          <div class="body-preview">{{contact.first_name}}, you showed up and did the work.
+
+As promised, here's everything you got from today's workshop:
+
+🤖 Your AI Prompt Library & Course Creator Bot
+→ https://items-obey-2ps.craft.me/s2HtZ1VyYS24Am
+Password: russisawesome
+
+👉 BOOK YOUR BREAKTHROUGH CALL: clientsondemand.com/apply
+
+P.P.S. You can still grab your VIP upgrade here:
+UPGRADE TO VIP: https://clientsondemand.live/cod-hto-workshop-vip-upgrade
+VIP Q&A on {{custom_values.cod_auto_workshop_vip_date_pretty}} @ {{custom_values.cod_auto_workshop_vip_time_pretty}} {{custom_values.cod_auto_workshop_timezone}}</div>
+          <div class="merge-tags">
+            <span class="tag common">{{contact.first_name}}</span>
+            <span class="tag common">{{custom_values.cod_auto_workshop_vip_date_pretty}}</span>
+            <span class="tag common">{{custom_values.cod_auto_workshop_vip_time_pretty}}</span>
+            <span class="tag common">{{custom_values.cod_auto_workshop_timezone}}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROW 4: +17 hrs -->
+    <div class="row">
+      <div class="time-label">
+        <span class="when">After Event</span>
+        <span class="offset">+17 hrs</span>
+        <span class="pt">~9 AM PT</span>
+        <span class="condition">if no call booked</span>
+      </div>
+
+      <!-- NEW: +17hrs -->
+      <div class="cell new-cell">
+        <div class="msg-block">
+          <span class="msg-type email">&#9993; Email</span>
+          <div class="subject-line"><strong>Subject</strong>Building the offer was the easy part, {{contact.first_name}}.</div>
+          <div class="body-preview">Hey {{contact.first_name}},
+
+Yesterday you built an offer.
+
+That's not a small thing. Most coaches, consultants, and service providers spend months circling around their positioning, their pricing, their packaging.
+
+The hard part is deploying it. That's the gap the strategy call is designed to close.
+
+Book your strategy call: www.clientsondemand.com/apply
+
+You have the offer. Now let's build the business around it.</div>
+          <div class="merge-tags">
+            <span class="tag common">{{contact.first_name}}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- LIVE: +17hrs -->
+      <div class="cell live-cell">
+        <div class="msg-block">
+          <span class="msg-type email">&#9993; Email</span>
+          <div class="subject-line"><strong>Subject</strong>We just finished building your offer - now what?</div>
+          <div class="body-preview">Hi {{contact.first_name}},
+
+If you attended last night's workshop, you already know — we built real $10K offers together using AI.
+
+Building the offer was the easy part.
+
+Book your call: www.clientsondemand.com/apply
+
+P.S. If you missed the workshop — UPGRADE TO VIP and get the replay + VIP Q&A on {{custom_values.cod_auto_workshop_vip_date_pretty}} @ {{custom_values.cod_auto_workshop_vip_time_pretty}} {{custom_values.cod_auto_workshop_timezone}}.
+https://clientsondemand.live/hto-workshop-vip-upgrade</div>
+          <div class="merge-tags">
+            <span class="tag common">{{contact.first_name}}</span>
+            <span class="tag unique-live">{{custom_values.cod_auto_workshop_vip_date_pretty}}</span>
+            <span class="tag unique-live">{{custom_values.cod_auto_workshop_vip_time_pretty}}</span>
+            <span class="tag unique-live">{{custom_values.cod_auto_workshop_timezone}}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROW 5: +22 hrs (LIVE ONLY) -->
+    <div class="row">
+      <div class="time-label">
+        <span class="when">After Event</span>
+        <span class="offset">+22 hrs</span>
+        <span class="pt">~2 PM PT</span>
+        <span class="condition">if no call booked</span>
+      </div>
+
+      <div class="cell empty">Not in new draft</div>
+
+      <!-- LIVE: +22hrs -->
+      <div class="cell live-cell">
+        <div class="msg-block">
+          <span class="msg-type email">&#9993; Email</span>
+          <div class="subject-line"><strong>Subject</strong>The Graveyard of Good Intentions</div>
+          <div class="body-preview">Hi {{contact.first_name}},
+
+I want to tell you about the graveyard.
+
+It's filled with brilliant offers that never got sold. Perfect positioning that never got tested.
+
+Motivation has a shelf life. Give it a week, and you'll be questioning whether you're "ready" for high-ticket pricing.
+
+Book here: www.clientsondemand.com/apply</div>
+          <div class="merge-tags">
+            <span class="tag common">{{contact.first_name}}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROW 6: +26 hrs -->
+    <div class="row">
+      <div class="time-label">
+        <span class="when">After Event</span>
+        <span class="offset">+26 hrs</span>
+        <span class="pt">~6 PM PT</span>
+        <span class="condition">if no call booked</span>
+      </div>
+
+      <!-- NEW: +26hrs -->
+      <div class="cell new-cell">
+        <div class="msg-block">
+          <span class="msg-type email">&#9993; Email</span>
+          <div class="subject-line"><strong>Subject</strong>What separates the people who make it work, {{contact.first_name}}.</div>
+          <div class="body-preview">Hey {{contact.first_name}},
+
+One quick thing.
+
+Here's a pattern I've watched hundreds of times.
+
+You attend the workshop. You build your offer live in the session. Then some people turn it into paying clients within 30 days. Others let the notes sit in a folder.
+
+The difference is almost never talent. It's one thing: a concrete next step.
+
+Book here: www.clientsondemand.com/apply</div>
+          <div class="merge-tags">
+            <span class="tag common">{{contact.first_name}}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- LIVE: +26hrs -->
+      <div class="cell live-cell">
+        <div class="msg-block">
+          <span class="msg-type email">&#9993; Email</span>
+          <div class="subject-line"><strong>Subject</strong>The $10K Question</div>
+          <div class="body-preview">Hi {{contact.first_name}},
+
+Let me ask you a question that will change everything:
+
+What would you do differently if you KNEW you could enroll $10K clients consistently?
+
+That's the difference between successful coaches and struggling ones. It's not talent. It's certainty.
+
+Book here: www.clientsondemand.com/apply</div>
+          <div class="merge-tags">
+            <span class="tag common">{{contact.first_name}}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROW 7: +29 hrs (LIVE ONLY) -->
+    <div class="row">
+      <div class="time-label">
+        <span class="when">After Event</span>
+        <span class="offset">+29 hrs</span>
+        <span class="pt">~9 PM PT</span>
+        <span class="condition">if no call booked</span>
+      </div>
+
+      <div class="cell empty">Not in new draft</div>
+
+      <!-- LIVE: +29hrs -->
+      <div class="cell live-cell">
+        <div class="msg-block">
+          <span class="msg-type email">&#9993; Email</span>
+          <div class="subject-line"><strong>Subject</strong>Last Call</div>
+          <div class="body-preview">Hi {{contact.first_name}},
+
+Let me be direct with you: You have a choice to make.
+
+You can take what you learned yesterday and do what most coaches do — nothing.
+
+Or you can do what the successful coaches do. Take action while others hesitate.
+
+Book your call: www.clientsondemand.com/apply
+
+Your future self will thank you. Or regret that you didn't.</div>
+          <div class="merge-tags">
+            <span class="tag common">{{contact.first_name}}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROW 8: +46 hrs (NEW ONLY) -->
+    <div class="row">
+      <div class="time-label">
+        <span class="when">After Event</span>
+        <span class="offset">+46 hrs</span>
+        <span class="pt">~2–3 PM PT</span>
+        <span class="condition">if no call booked</span>
+      </div>
+
+      <!-- NEW: +46hrs -->
+      <div class="cell new-cell">
+        <div class="msg-block">
+          <span class="msg-type email">&#9993; Email</span>
+          <div class="subject-line"><strong>Subject</strong>This is the last email I'll send about this, {{contact.first_name}}.</div>
+          <div class="body-preview">Hey {{contact.first_name}},
+
+The workshop was two days ago. The clarity you had during the session, the offer you built, the way everything clicked... that sharpness fades.
+
+The strategy call takes 30 minutes. You'll walk away with a plan specific to your business.
+
+After this, if we don't hear from you, we'll assume the timing isn't right.
+
+Book your strategy call: www.clientsondemand.com/apply</div>
+          <div class="merge-tags">
+            <span class="tag common">{{contact.first_name}}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="cell empty">Not in live version</div>
+    </div>
+
+    <!-- ROW 9: +58 hrs (NEW ONLY) -->
+    <div class="row">
+      <div class="time-label">
+        <span class="when">After Event</span>
+        <span class="offset">+58 hrs</span>
+        <span class="pt">~4–11 AM PT</span>
+        <span class="condition">if no call booked</span>
+      </div>
+
+      <!-- NEW: +58hrs -->
+      <div class="cell new-cell">
+        <div class="msg-block">
+          <span class="msg-type email">&#9993; Email</span>
+          <div class="subject-line"><strong>Subject</strong>Quick question, {{contact.first_name}}.</div>
+          <div class="body-preview">Hey {{contact.first_name}},
+
+Noticed you've been reading these emails.
+
+If the strategy call makes sense but the scheduling page didn't quite work, just reply with a day and time that works for you. We'll make it happen.
+
+No form. No funnel. Just a reply.</div>
+          <div class="merge-tags">
+            <span class="tag common">{{contact.first_name}}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="cell empty">Not in live version</div>
+    </div>
+
+  </div><!-- end .timeline -->
+
+  <!-- ===== QUICK MATRIX ===== -->
+  <h2 class="section-title">Timing &amp; Trigger Summary</h2>
+  <table class="matrix-table">
+    <thead>
+      <tr>
+        <th>Timing</th>
+        <th>Type</th>
+        <th>New Draft — Subject / Content</th>
+        <th>Live Version — Subject / Content</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>–1 hr</strong><br><small>Pre-event</small></td>
+        <td><span class="badge both">Email + SMS</span></td>
+        <td><em>No subject specified</em><br><small>Body: "We start in 1 hour!"</small></td>
+        <td><strong>⏰ Workshop with Russ Ruffino in 1 Hour – Your Workshop Access</strong></td>
+      </tr>
+      <tr class="diff-highlight">
+        <td><strong>–15 min</strong><br><small>Pre-event</small></td>
+        <td><span class="badge both">Email + SMS</span></td>
+        <td><strong>⏰ Workshop starts in 15 minutes</strong><br><small>Opens: "Hey it's Russ Ruffino. Quick heads-up…" (no first_name, no date)</small></td>
+        <td><strong>⏰ Workshop starts in 15 minutes</strong><br><small>Opens: "Hi {{contact.first_name}}, We're creating your High-Ticket Offer…" (includes date)</small></td>
+      </tr>
+      <tr>
+        <td><strong>+4 hrs</strong><br><small>~8 PM PT</small></td>
+        <td><span class="badge email">Email</span></td>
+        <td><strong>Your AI prompts are ready, {{contact.first_name}}.</strong></td>
+        <td><strong>Your AI prompts + bot access (as promised)</strong></td>
+      </tr>
+      <tr class="diff-highlight">
+        <td><strong>+17 hrs</strong><br><small>~9 AM PT</small></td>
+        <td><span class="badge email">Email</span></td>
+        <td><strong>Building the offer was the easy part, {{contact.first_name}}.</strong><br><small>Lean / no VIP tags</small></td>
+        <td><strong>We just finished building your offer - now what?</strong><br><small>Includes VIP upgrade P.S. with date/time tags</small></td>
+      </tr>
+      <tr style="background:#fdf4ff">
+        <td><strong>+22 hrs</strong><br><small>~2 PM PT</small></td>
+        <td><span class="badge email">Email</span></td>
+        <td style="color:#aaa;font-style:italic">— Not present —</td>
+        <td><strong>The Graveyard of Good Intentions</strong></td>
+      </tr>
+      <tr>
+        <td><strong>+26 hrs</strong><br><small>~6 PM PT</small></td>
+        <td><span class="badge email">Email</span></td>
+        <td><strong>What separates the people who make it work, {{contact.first_name}}.</strong></td>
+        <td><strong>The $10K Question</strong></td>
+      </tr>
+      <tr style="background:#fdf4ff">
+        <td><strong>+29 hrs</strong><br><small>~9 PM PT</small></td>
+        <td><span class="badge email">Email</span></td>
+        <td style="color:#aaa;font-style:italic">— Not present —</td>
+        <td><strong>Last Call</strong></td>
+      </tr>
+      <tr style="background:#eef6ff">
+        <td><strong>+46 hrs</strong><br><small>~2–3 PM PT</small></td>
+        <td><span class="badge email">Email</span></td>
+        <td><strong>This is the last email I'll send about this, {{contact.first_name}}.</strong></td>
+        <td style="color:#aaa;font-style:italic">— Not present —</td>
+      </tr>
+      <tr style="background:#eef6ff">
+        <td><strong>+58 hrs</strong><br><small>~4–11 AM PT</small></td>
+        <td><span class="badge email">Email</span></td>
+        <td><strong>Quick question, {{contact.first_name}}.</strong></td>
+        <td style="color:#aaa;font-style:italic">— Not present —</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- ===== MERGE TAG ANALYSIS ===== -->
+  <h2 class="section-title">Merge Tag Analysis</h2>
+  <div class="merge-summary">
+
+    <div class="merge-card">
+      <h3><span class="dot common"></span> Common to Both Workflows</h3>
+      <table>
+        <thead><tr><th>Merge Tag</th><th>Where Used</th></tr></thead>
+        <tbody>
+          <tr><td>{{contact.first_name}}</td><td class="appear">All post-event emails; –1 hr email (live only for –15 min)</td></tr>
+          <tr><td>{{contact.joinurl}}</td><td class="appear">–1 hr email &amp; SMS; –15 min email &amp; SMS</td></tr>
+          <tr><td>{{ contact.booked_workshop_pretty_date }}</td><td class="appear">–1 hr email; –15 min email (live only)</td></tr>
+          <tr><td>{{custom_values.cod_auto_workshop_vip_date_pretty}}</td><td class="appear">+4 hr email P.S. (both); +17 hr email P.S. (live only)</td></tr>
+          <tr><td>{{custom_values.cod_auto_workshop_vip_time_pretty}}</td><td class="appear">+4 hr email P.S. (both); +17 hr email P.S. (live only)</td></tr>
+          <tr><td>{{custom_values.cod_auto_workshop_timezone}}</td><td class="appear">+4 hr email P.S. (both); +17 hr email P.S. (live only)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="merge-card">
+      <h3><span class="dot new"></span> Only in New Draft</h3>
+      <table>
+        <thead><tr><th>Merge Tag / Placeholder</th><th>Where &amp; Note</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>[COURSE_CREATOR_BOT_LINK]</td>
+            <td class="appear">+4 hr email — ⚠️ This is an unfilled placeholder, not a real merge tag. Needs a URL before going live.</td>
+          </tr>
+        </tbody>
+      </table>
+      <p style="font-size:.75rem;color:#666;margin-top:10px;">The VIP custom value tags appear in the new draft's +4 hr email (same as live) but are <strong>absent</strong> from the new draft's +17 hr email (where the live version still includes them).</p>
+    </div>
+
+    <div class="merge-card">
+      <h3><span class="dot live"></span> Extra VIP Tags in Live (+17 hr only)</h3>
+      <table>
+        <thead><tr><th>Merge Tag</th><th>Where</th></tr></thead>
+        <tbody>
+          <tr><td>{{custom_values.cod_auto_workshop_vip_date_pretty}}</td><td class="appear">+17 hr email P.S. (live) — missing in new draft equivalent</td></tr>
+          <tr><td>{{custom_values.cod_auto_workshop_vip_time_pretty}}</td><td class="appear">+17 hr email P.S. (live) — missing in new draft equivalent</td></tr>
+          <tr><td>{{custom_values.cod_auto_workshop_timezone}}</td><td class="appear">+17 hr email P.S. (live) — missing in new draft equivalent</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <!-- Notable differences callout -->
+  <h2 class="section-title">Key Structural Differences</h2>
+  <table class="matrix-table">
+    <thead>
+      <tr><th>Area</th><th>New Draft</th><th>Live Version</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Total email steps</strong></td>
+        <td>7 emails + 2 SMS = <strong>9 touches</strong></td>
+        <td>7 emails + 2 SMS = <strong>9 touches</strong></td>
+      </tr>
+      <tr class="diff-highlight">
+        <td><strong>Post-event follow-up cadence</strong></td>
+        <td>+4, +17, +26, +46, +58 hrs</td>
+        <td>+4, +17, +22, +26, +29 hrs</td>
+      </tr>
+      <tr>
+        <td><strong>Longest follow-up window</strong></td>
+        <td><strong>+58 hrs</strong> (reply-based close)</td>
+        <td><strong>+29 hrs</strong> ("Last Call")</td>
+      </tr>
+      <tr class="diff-highlight">
+        <td><strong>–15 min email salutation</strong></td>
+        <td>No first name; no date/time block</td>
+        <td>Uses {{contact.first_name}} + date/time block</td>
+      </tr>
+      <tr>
+        <td><strong>–1 hr email subject line</strong></td>
+        <td>⚠️ Missing / not specified</td>
+        <td>Explicit subject line provided</td>
+      </tr>
+      <tr class="diff-highlight">
+        <td><strong>Bot link in +4 hr email</strong></td>
+        <td>Uses <code>[COURSE_CREATOR_BOT_LINK]</code> placeholder ⚠️</td>
+        <td>Direct bot access instructions (no separate link placeholder)</td>
+      </tr>
+      <tr>
+        <td><strong>+17 hr email VIP P.S.</strong></td>
+        <td>No VIP upsell in this email</td>
+        <td>Full VIP upgrade P.S. with date/time merge tags</td>
+      </tr>
+      <tr class="diff-highlight">
+        <td><strong>Unique emails (new draft only)</strong></td>
+        <td>+46 hr "last email" + +58 hr "quick question / reply"</td>
+        <td>—</td>
+      </tr>
+      <tr>
+        <td><strong>Unique emails (live only)</strong></td>
+        <td>—</td>
+        <td>+22 hr "Graveyard of Good Intentions" + +29 hr "Last Call"</td>
+      </tr>
+    </tbody>
+  </table>
+
+</div>
+
+<footer>
+  Comparison generated 2026-05-14 &nbsp;·&nbsp;
+  <a href="https://app.clientsondemand.app/location/h83O4TKy09yLLdfnIw3K/workflow/f364e26a-993d-4b85-bc76-7ecdfc20aa54" target="_blank">New Draft Workflow</a>
+  &nbsp;·&nbsp;
+  <a href="https://app.clientsondemand.app/location/h83O4TKy09yLLdfnIw3K/workflow/d70ebf0c-1fc7-440a-a6f1-16c04e1d48f3" target="_blank">Live Workflow</a>
+</footer>
+
+</body>
+</html>
